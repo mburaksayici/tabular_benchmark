@@ -1,37 +1,75 @@
+import sys
+import inspect
+
 import pandas as pd
-import json
-
-data = "data/bank/bank-full.csv"
-
-with open("data/bank/params.json") as json_file:
-    data_params = json.load(json_file)
-
-
-df = pd.read_csv(data, sep=";")
-
-object_columns_feat = cat_features = df.select_dtypes(include="object").columns.tolist()
+from tabulate import tabulate
+from pprint import pprint
+import data
+import ml_models
+from data import DataReader
 
 
-def convert_cat_str_to_int(df, cat_features):
-    rule_dict = dict()
-    for cat_feat in cat_features:
-        uniques_ordered = sorted(df[cat_feat].unique().tolist())
-        rule_dict[cat_feat] = rule = dict(
-            zip(uniques_ordered, range(len(uniques_ordered)))
-        )
-        df[cat_feat] = df[cat_feat].map(rule)
-    return df, rule_dict
+class TabularBenchmark:
+    MODEL_CLASSES = dict(inspect.getmembers(ml_models, inspect.isclass))
+    DATASET_CLASSES = dict(inspect.getmembers(data, inspect.isclass))
+
+    def __init__(self, datasets=["BankDataset"], models=["XGBModel", "LGBMModel"]):
+        self.models = models
+        self.datasets = datasets
+
+    def register_model():
+        pass
+
+    def register_dataset():
+        pass
+
+    def _prepare_data(self, dataset_cls):
+        data_reader = DataReader(dataset_cls)
+        df, params = data_reader.read()
+        return df, params
+
+    def create_benchmark(self):
+        results = dict()
+        params = dict()
+
+        for dataset in self.datasets:
+            # Read data
+            dataset_cls = self.DATASET_CLASSES[dataset]
+            df, data_params = self._prepare_data(dataset_cls)
+
+            results[dataset] = dict()
+            params[dataset] = dict()
+
+            for model in self.models:
+                model_cls = self.MODEL_CLASSES[model]()
+                preprocessed_data = model_cls.preprocess(df, data_params)
+                benchmark = model_cls.fit_model(
+                    preprocessed_data=preprocessed_data, hyperparam_opt=True
+                )
+
+                results[dataset][model] = benchmark["metric"]
+                params[dataset][model] = benchmark["params"]
+        return results, params
 
 
-df, rule_dict = convert_cat_str_to_int(df, cat_features)
+tabular_benchmark = TabularBenchmark(
+    datasets=["BankDataset"], models=["XGBModel", "LGBMModel"]
+)
+# tabular_benchmark.register_model()
+# tabular_benchmark.register_dataset()
+
+results, params = tabular_benchmark.create_benchmark()
+results_df = pd.DataFrame.from_records(results)
 
 
-from ml_models.lightgbm.lgbm_model import LGBMModel
+print(
+    tabulate(
+        results_df,
+        headers=results_df.columns,
+        floatfmt=".5f",
+        showindex=True,
+        tablefmt="psql",
+    )
+)
 
-model = LGBMModel()
-
-
-preprocessed_data = model.preprocess(df, data_params)
-
-
-model.fit_model(preprocessed_data=preprocessed_data, hyperparam_opt=True)
+pprint(params)

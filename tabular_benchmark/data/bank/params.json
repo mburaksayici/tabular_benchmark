@@ -1,1 +1,27 @@
-{"data_name": "bank", "link": "https://archive.ics.uci.edu/ml/datasets/Bank+Marketing#", "problem_type": "classification", "numerical_columns": ["age", "balance", "day", "duration", "pdays", "previous", "y"], "output": "y"}
+{
+    "data_name": "bank",
+    "link": "https://archive.ics.uci.edu/ml/datasets/Bank+Marketing#",
+    "problem_type": "classification",
+    "numerical_columns": [
+      "age",
+      "balance",
+      "day",
+      "duration",
+      "pdays",
+      "previous",
+      "y"
+    ],
+    "categorical_columns": [
+      "job",
+      "marital",
+      "education",
+      "default",
+      "housing",
+      "loan",
+      "contact",
+      "month",
+      "poutcome",
+      "y"
+    ],
+    "target_column": "y"
+  }
